@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Controle de Estoque</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 10px;
+      background-color: #f9f9f9;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    input, button {
+      padding: 8px;
+      font-size: 16px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #fff;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-left: 5px solid #4CAF50;
+    }
+    .vencido {
+      border-left-color: red;
+      background-color: #ffe6e6;
+    }
+    .alerta {
+      border-left-color: orange;
+      background-color: #fff5e6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cadastro de Produto</h1>
+  <form id="formProduto">
+    <input type="text" name="nome" placeholder="Nome do produto" required />
+    <input type="number" name="quantidade" placeholder="Quantidade" required />
+    <input type="date" name="validade" required />
+    <input type="text" name="categoria" placeholder="Categoria" />
+    <input type="text" name="cod_barras" placeholder="Código de Barras (opcional)" />
+    <button type="submit">Cadastrar</button>
+  </form>
+
+  <h2>Estoque Atual</h2>
+  <ul id="listaProdutos"></ul>
+
+  <script>
+    const form = document.getElementById('formProduto');
+    const lista = document.getElementById('listaProdutos');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const produto = Object.fromEntries(data.entries());
+      produto.id = Date.now();
+      salvarProduto(produto);
+      form.reset();
+      carregarProdutos();
+    });
+
+    function salvarProduto(produto) {
+      const produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+      produtos.push(produto);
+      localStorage.setItem('produtos', JSON.stringify(produtos));
+    }
+
+    function carregarProdutos() {
+      const produtos = JSON.parse(localStorage.getItem('produtos')) || [];
+      lista.innerHTML = '';
+
+      produtos.forEach(produto => {
+        const li = document.createElement('li');
+        const validade = new Date(produto.validade);
+        const hoje = new Date();
+        const dias = Math.floor((validade - hoje) / (1000 * 60 * 60 * 24));
+        let aviso = '';
+        let classe = '';
+
+        if (dias < 0) {
+          aviso = '⚠️ VENCIDO';
+          classe = 'vencido';
+        } else if (dias <= 7) {
+          aviso = `⚠️ Vence em ${dias} dia(s)`;
+          classe = 'alerta';
+        }
+
+        li.className = classe;
+        li.innerHTML = `
+          <strong>${produto.nome}</strong> - ${produto.quantidade} und<br>
+          Categoria: ${produto.categoria || 'N/A'}<br>
+          Validade: ${produto.validade} ${aviso}
+        `;
+        lista.appendChild(li);
+      });
+    }
+
+    // Carrega ao abrir o site
+    carregarProdutos();
+  </script>
+</body>
+</html>
